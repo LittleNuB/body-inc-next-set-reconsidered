@@ -10,6 +10,8 @@ The current question is no longer "is the concept clever?" It is:
 
 > Does Variant B make players care about KPI movement because it changes OKR progress, risk labels, crisis fallout, and next-round pressure?
 
+The default flow is now **初创期试营业 30 秒**. It exists to make first-time onsite players understand the core rule before the full system appears.
+
 ## Prototype
 
 Playable throwaway prototype:
@@ -28,12 +30,18 @@ Variant URLs:
 
 The prototype has already been optimized once. Variant B is now the main proof-of-fun path and includes:
 
+- default 30-second trial flow for onsite players
+- separate full-meeting roadshow/demo entry
+- renamed status-style KPIs: 供氧周转 / 动员温度 / 刺激强度 / 泡沫指数
+- optional DeepSeek AI secretary through a local Node proxy
 - contextual actions per agenda item, mapped to stable strategy types
 - round audit focus
 - crisis warnings and crisis events
 - risk tags and next-round fallout
 - one-way department OKR progress
 - single-round rating and 今日肉身财报
+
+AI is deliberately narrow: it may rewrite the first complete-meeting agenda item and the report's最大内耗事件, but all gameplay rules stay local and deterministic.
 
 Current priority is not adding content. First fix the latest review issues captured in `docs/HANDOFF.md`, especially:
 
@@ -59,7 +67,7 @@ Use 3 to 5 testers. Give only this prompt:
 
 > 刚练完一组腿，休息一分钟。你是肉身集团老板，把小会开到能复工。
 
-Start with **Variant B**.
+Start with the default **试营业 30 秒** path.
 
 Watch silently for the first run.
 
@@ -67,7 +75,9 @@ Record:
 
 - Time to first choice.
 - Whether they mention the green KPI band.
-- Whether they notice the round audit focus.
+- Whether they understand that middle is good before the complete meeting.
+- Whether they choose to enter the full meeting after trial.
+- Whether they notice the round audit focus in the full meeting.
 - Which strategy type they choose twice or more.
 - First line they laugh at.
 - Whether crisis warning changes their next choice.
@@ -75,12 +85,12 @@ Record:
 - Whether they want "再来一组".
 - Which report line they would screenshot.
 
-Use Variant A or C only for layout comparison after the B run.
+Use the secondary **直接开完整小会** entry for roadshow rehearsal. Use Variant A or C only for layout comparison after the B run.
 
 ## Pass Signals
 
 - They make the first choice within 10 seconds of entering the meeting.
-- They understand the middle KPI target by the second issue.
+- They understand the middle KPI target by the second trial issue.
 - They react to a crisis warning or crisis event.
 - They understand that OKR progress and risk labels are consequences.
 - They describe one consequence as "that makes sense" or "that is funny".

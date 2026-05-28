@@ -18,10 +18,10 @@ const variants = [
 ];
 
 const kpiMeta = {
-  cash: { name: "现金流", icon: "氧", lowRisk: "现金流赤字 +1", highRisk: "预算闲置 +1" },
-  morale: { name: "士气", icon: "心", lowRisk: "士气塌方 +1", highRisk: "士气过热 +1" },
-  growth: { name: "增长", icon: "泵", lowRisk: "增长停摆 +1", highRisk: "增长过载 +1" },
-  bubble: { name: "泡沫", icon: "泡", lowRisk: "叙事真空 +1", highRisk: "泡沫审计 +1" }
+  cash: { name: "供氧周转", icon: "氧", lowRisk: "供氧断档 +1", highRisk: "供氧烧穿 +1" },
+  morale: { name: "动员温度", icon: "心", lowRisk: "动员降温 +1", highRisk: "动员上头 +1" },
+  growth: { name: "刺激强度", icon: "泵", lowRisk: "刺激不足 +1", highRisk: "刺激过载 +1" },
+  bubble: { name: "泡沫指数", icon: "泡", lowRisk: "叙事真空 +1", highRisk: "泡沫审计 +1" }
 };
 
 const strategyMeta = {
@@ -38,6 +38,59 @@ const characters = [
   { id: "abs", name: "腹部传说部", face: "▦" }
 ];
 
+const trialAgenda = [
+  {
+    id: "trial-oxygen-budget",
+    speaker: "心肺财务部",
+    speakerId: "heart",
+    title: "开张供氧预算",
+    proposal: "肉身集团刚成立，心肺财务部只问一句：站起来这件事，预算批不批？",
+    options: [
+      {
+        id: "trial-oxygen-comfort",
+        label: "先批三口气",
+        strategy: "comfort",
+        strategyLabel: "安抚型",
+        reaction: "安抚落章: 供氧周转回到能说话的水平，腿部愿意听下一页。",
+        deltas: { cash: 13, morale: 5, growth: 0, bubble: 0 }
+      },
+      {
+        id: "trial-oxygen-push",
+        label: "马上站起来试运行",
+        strategy: "push",
+        strategyLabel: "推进型",
+        reaction: "推进落章: 公司立刻试运行，供氧周转被迫加班。",
+        deltas: { cash: -5, morale: 14, growth: 0, bubble: 0 }
+      }
+    ]
+  },
+  {
+    id: "trial-morale-hire",
+    speaker: "腿部事业群",
+    speakerId: "legs",
+    title: "腿部入职动员",
+    proposal: "腿部事业群表示可以复工，但希望公司证明这不是刚成立就裁员。",
+    options: [
+      {
+        id: "trial-morale-comfort",
+        label: "发试营业安抚包",
+        strategy: "comfort",
+        strategyLabel: "安抚型",
+        reaction: "安抚落章: 动员温度回到绿色窗口，腿部把工牌挂上了。",
+        deltas: { cash: -2, morale: 13, growth: 0, bubble: 0 }
+      },
+      {
+        id: "trial-morale-push",
+        label: "宣布小步复工",
+        strategy: "push",
+        strategyLabel: "推进型",
+        reaction: "推进落章: 腿部接受小步复工，但动员温度有点上头。",
+        deltas: { cash: 4, morale: 9, growth: 0, bubble: 0 }
+      }
+    ]
+  }
+];
+
 const agenda = [
   {
     id: "stairs-spinout",
@@ -51,7 +104,7 @@ const agenda = [
         label: "包装成下肢基建升级",
         strategy: "vision",
         strategyLabel: "愿景型",
-        reaction: "愿景落章: 腿部接受了“每一级台阶都是增长曲线”的融资故事。",
+        reaction: "愿景落章: 腿部接受了“每一级台阶都是刺激曲线”的融资故事。",
         deltas: { cash: -2, morale: 4, growth: 13, bubble: 14 }
       },
       {
@@ -86,8 +139,8 @@ const agenda = [
     id: "cash-burn",
     speaker: "心肺财务部",
     speakerId: "heart",
-    title: "现金流预警",
-    proposal: "心肺财务部表示刚才那组把氧气预算烧成了团建经费。",
+    title: "供氧周转预警",
+    proposal: "心肺财务部表示刚才那组把供氧周转烧成了团建经费。",
     options: [
       {
         id: "cash-vision",
@@ -188,7 +241,7 @@ const agenda = [
         label: "补发试用员工工牌",
         strategy: "comfort",
         strategyLabel: "安抚型",
-        reaction: "安抚落章: 腹部把试用员工工牌擦亮，士气回到地面以上。",
+        reaction: "安抚落章: 腹部把试用员工工牌擦亮，动员温度回到地面以上。",
         deltas: { cash: -9, morale: 12, growth: 4, bubble: 1 }
       },
       {
@@ -259,14 +312,19 @@ const agenda = [
 let variant = getVariant();
 let timer = null;
 let stampTimer = null;
+let preloadedAgendaAi = null;
+let preloadedAgendaAiPromise = null;
+let preloadStarted = false;
 
 const state = {
   phase: "opening",
+  meetingMode: "trial",
   setNumber: 1,
   completedMeetings: 0,
+  trialSegments: 0,
   review: "",
-  timeLeft: 60,
-  activeAgenda: agenda,
+  timeLeft: 30,
+  activeAgenda: trialAgenda,
   agendaIndex: 0,
   kpis: { cash: 54, morale: 50, growth: 45, bubble: 47 },
   history: [],
@@ -284,11 +342,17 @@ const state = {
   lastStamp: null,
   rating: null,
   report: null,
+  aiAgendaSource: "local",
+  aiAgendaNote: "本地模板待命。",
+  aiReportSource: "local",
+  aiReportNote: "本地财报待命。",
+  aiRequestId: 0,
   isStamped: false,
   isExtension: false
 };
 
 render();
+preloadAgendaAi();
 
 document.addEventListener("keydown", (event) => {
   if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
@@ -331,6 +395,7 @@ function renderPhase() {
   if (state.phase === "opening") return renderOpening();
   if (state.phase === "training") return renderTraining();
   if (state.phase === "review") return renderReview();
+  if (state.phase === "aiLoading") return renderAiLoading();
   if (state.phase === "meeting") return renderMeeting();
   if (state.phase === "rating") return renderRating();
   return renderReport();
@@ -342,20 +407,26 @@ function renderOpening() {
       <div>
         <p class="micro">Body Inc.</p>
         <h1 class="hero-title">下一组<br />再议</h1>
-        <p class="hero-subtitle">下一组前，先开个小会。</p>
+        <p class="hero-subtitle">刚练完一组？肉身集团先开 30 秒复工会。</p>
       </div>
       <div class="quick-config">
+        <div class="locked-choice">
+          <span class="micro">默认现场体验</span>
+          <strong class="title-locked">初创期 · 试营业</strong>
+          <span class="hint">先管供氧周转和动员温度。绿色不是满格，是可复工窗口。</span>
+        </div>
         <div class="locked-choice">
           <span class="micro">今日主练部门</span>
           <strong class="title-locked">腿部事业群</strong>
           <span class="hint">安全帽已戴好，膝盖暂未同意。</span>
         </div>
         <div class="choice-row">
-          <div class="choice">30 秒<br /><span class="hint">碰头会</span></div>
-          <div class="choice active">60 秒<br /><span class="hint">标准小会</span></div>
+          <div class="choice active">30 秒<br /><span class="hint">试营业</span></div>
+          <div class="choice">60 秒<br /><span class="hint">路演完整小会</span></div>
         </div>
       </div>
-      <button class="primary-action" data-action="start">开始今日营业</button>
+      <button class="primary-action" data-action="start-trial">试营业 30 秒</button>
+      <button class="secondary-action" data-action="full-demo">直接开完整小会</button>
     </section>
   `;
 }
@@ -397,6 +468,19 @@ function renderReview() {
           `
         )
         .join("")}
+    </section>
+  `;
+}
+
+function renderAiLoading() {
+  return `
+    <section class="ai-loading">
+      <div class="training-card">
+        <p class="micro">AI 会议秘书</p>
+        <h1>改稿中</h1>
+        <p class="hint">秘书正在把本轮状态改成荒诞会议材料。本地模板已经备好，超时会直接开会。</p>
+        <div class="pulse-meter" aria-hidden="true"></div>
+      </div>
     </section>
   `;
 }
@@ -445,11 +529,16 @@ function renderMeeting() {
 }
 
 function renderTopbar() {
+  const title = state.meetingMode === "trial" ? "初创期试营业" : "组间小会";
+  const detail =
+    state.meetingMode === "trial"
+      ? "先活下来 · 两项进绿区"
+      : `第 ${state.setNumber} 组后 · ${state.review || "正常交付"}`;
   return `
     <div class="topbar">
       <div class="brand">
-        <strong>组间小会</strong>
-        <span>第 ${state.setNumber} 组后 · ${state.review || "正常交付"}</span>
+        <strong>${title}</strong>
+        <span>${detail}</span>
       </div>
       <div class="timer ${state.timeLeft <= 10 ? "danger" : ""}">
         <strong>${String(state.timeLeft).padStart(2, "0")}</strong>
@@ -458,6 +547,7 @@ function renderTopbar() {
     </div>
     <div class="status-strip">
       <span class="agenda-count">议题 ${Math.min(state.agendaIndex + 1, state.activeAgenda.length)} / ${state.activeAgenda.length}</span>
+      ${state.meetingMode === "full" ? renderAiBadge(state.aiAgendaSource) : ""}
       <button class="tiny-action" data-action="early">提前复工</button>
     </div>
   `;
@@ -467,6 +557,10 @@ function renderAuditCrisisPanel() {
   const warnings = getActiveWarnings();
   const recentCrises = getRoundCrisisEvents().slice(-2);
   const crisisText = [...warnings, ...recentCrises.map((item) => `危机: ${item.label}`)];
+  const crisisIdle =
+    state.meetingMode === "trial"
+      ? "初创期还没有审计，只看能不能复工。"
+      : "暂无危机，审计员还在喝水。";
   return `
     <section class="audit-panel">
       <div>
@@ -475,7 +569,7 @@ function renderAuditCrisisPanel() {
       </div>
       <div class="crisis-strip ${crisisText.length ? "has-crisis" : ""}">
         <span class="micro">危机提示区</span>
-        <strong>${crisisText.length ? crisisText.join(" / ") : "暂无危机，审计员还在喝水。"}</strong>
+        <strong>${crisisText.length ? crisisText.join(" / ") : crisisIdle}</strong>
       </div>
     </section>
   `;
@@ -514,8 +608,9 @@ function renderProposal(issue, compact = false) {
 function renderKpis(size = "") {
   return `
     <div class="kpi-grid ${size}">
-      ${Object.entries(kpiMeta)
-        .map(([key, meta]) => {
+      ${getVisibleKpiKeys()
+        .map((key) => {
+          const meta = kpiMeta[key];
           const value = state.kpis[key];
           const danger = getDangerType(value);
           const watch = state.crisisWatch[key];
@@ -541,10 +636,14 @@ function renderKpis(size = "") {
 
 function renderResult() {
   if (!state.lastResult) {
+    const copy =
+      state.meetingMode === "trial"
+        ? "只看两个仪表：太低会垮，太高会炸，绿色窗口才适合复工。"
+        : `${state.aiAgendaNote} 动作名会骗人，但策略类型会留下痕迹。数值等盖下去再说。`;
     return `
       <div class="result-panel">
         <strong>会议秘书待命</strong>
-        <span class="result-detail">动作名会骗人，但策略类型会留下痕迹。数值等盖下去再说。</span>
+        <span class="result-detail">${copy}</span>
       </div>
     `;
   }
@@ -553,6 +652,7 @@ function renderResult() {
       <strong>${state.lastResult.reaction}</strong>
       <div class="delta-row">
         ${Object.entries(state.lastResult.deltas)
+          .filter(([key, value]) => getVisibleKpiKeys().includes(key) && value !== 0)
           .map(([key, value]) => {
             const label = kpiMeta[key].name;
             const sign = value > 0 ? "+" : "";
@@ -604,6 +704,7 @@ function renderRating() {
   const rating = state.rating || buildRating("临时结算");
   const okr = state.okr;
   const risks = getRoundRiskTags();
+  const isTrial = state.meetingMode === "trial";
   return `
     <section class="rating">
       <div class="rating-card">
@@ -626,8 +727,11 @@ function renderRating() {
         ${renderKpis()}
       </div>
       <div class="action-grid">
-        <button class="primary-action" data-action="next-set">进入下一组</button>
-        <button class="secondary-action" data-action="extend">延长 15 秒</button>
+        ${
+          isTrial
+            ? '<button class="primary-action" data-action="full-demo">进入完整小会</button>'
+            : '<button class="primary-action" data-action="next-set">进入下一组</button><button class="secondary-action" data-action="extend">延长 15 秒</button>'
+        }
         <button class="secondary-action" data-action="report">今日歇业</button>
       </div>
     </section>
@@ -640,6 +744,8 @@ function renderReport() {
     <section class="report">
       <div class="report-card">
         <p class="micro">今日肉身财报</p>
+        ${state.completedMeetings > 0 ? renderAiBadge(state.aiReportSource) : ""}
+        ${state.completedMeetings > 0 ? `<p class="hint">${state.aiReportNote}</p>` : ""}
         <h1>${report.title}</h1>
         <div class="report-meta">
           <span>OKR ${report.okr}</span>
@@ -664,6 +770,12 @@ function renderReport() {
   `;
 }
 
+function renderAiBadge(source) {
+  const label =
+    source === "ai" ? "AI秘书" : source === "loading" ? "AI改稿中" : "本地模板";
+  return `<span class="ai-badge ${source}">${label}</span>`;
+}
+
 function renderSwitcher() {
   const label = variants.find(([key]) => key === variant)?.[1] || "";
   return `
@@ -679,6 +791,8 @@ function bindActions() {
   document.querySelectorAll("[data-action]").forEach((element) => {
     element.addEventListener("click", () => {
       const action = element.dataset.action;
+      if (action === "start-trial") startTrialMeeting();
+      if (action === "full-demo") startMeeting("正常交付");
       if (action === "start") startTraining();
       if (action === "complete-set") setPhase("review");
       if (action === "review") startMeeting(element.dataset.review);
@@ -702,6 +816,7 @@ function setPhase(phase) {
 function startTraining() {
   stopTimer();
   state.phase = "training";
+  state.meetingMode = "full";
   state.lastResult = null;
   state.lastStamp = null;
   state.isStamped = false;
@@ -709,17 +824,53 @@ function startTraining() {
   render();
 }
 
-function startMeeting(review) {
+function startTrialMeeting() {
+  stopTimer();
   state.phase = "meeting";
+  state.meetingMode = "trial";
+  state.review = "试营业";
+  state.timeLeft = 30;
+  state.activeAgenda = trialAgenda;
+  state.agendaIndex = 0;
+  state.kpis = { cash: 34, morale: 36, growth: 45, bubble: 47 };
+  state.lastResult = null;
+  state.lastStamp = null;
+  state.isStamped = false;
+  state.rating = null;
+  state.report = null;
+  state.aiAgendaSource = "local";
+  state.aiAgendaNote = "试营业使用本地模板。";
+  state.aiReportSource = "local";
+  state.aiReportNote = "本地财报待命。";
+  state.isExtension = false;
+  state.crisisWatch = resetCrisisWatch();
+  state.roundRiskStartIndex = state.riskTags.length;
+  state.roundCrisisStartIndex = state.crisisEvents.length;
+  state.okr.roundStart = state.okr.value;
+  state.auditFocus = "初创期只看两件事：供氧周转和动员温度进绿区。";
+  seedDangerWarnings();
+  startTimer();
+  render();
+}
+
+async function startMeeting(review) {
+  const requestId = ++state.aiRequestId;
+  stopTimer();
+  state.phase = "meeting";
+  state.meetingMode = "full";
   state.review = review;
   state.timeLeft = 60;
-  state.activeAgenda = agenda;
+  state.activeAgenda = cloneAgenda(agenda);
   state.agendaIndex = 0;
   state.lastResult = null;
   state.lastStamp = null;
   state.isStamped = false;
   state.rating = null;
   state.report = null;
+  state.aiAgendaSource = "loading";
+  state.aiAgendaNote = "AI 会议秘书改稿中。";
+  state.aiReportSource = "local";
+  state.aiReportNote = "本地财报待命。";
   state.isExtension = false;
   state.crisisWatch = resetCrisisWatch();
   state.roundRiskStartIndex = state.riskTags.length;
@@ -728,6 +879,25 @@ function startMeeting(review) {
   applyReviewEffect(review);
   seedDangerWarnings();
   state.auditFocus = buildAuditFocus();
+  state.phase = "aiLoading";
+  render();
+
+  const aiResult =
+    (await consumePreloadedAgendaAi(review, 2800)) ||
+    (hasPreloadingAgendaAi(review) ? null : await requestAiSecretary("agenda", buildAgendaAiContext(), 2800));
+  if (requestId !== state.aiRequestId) return;
+
+  if (aiResult?.ok && Array.isArray(aiResult.agenda)) {
+    state.activeAgenda = mergeAgendaCopy(agenda, aiResult.agenda);
+    state.aiAgendaSource = "ai";
+    state.aiAgendaNote = escapeHtml(aiResult.secretaryNote || "AI 会议秘书已根据本轮状态改稿。");
+  } else {
+    state.activeAgenda = cloneAgenda(agenda);
+    state.aiAgendaSource = "local";
+    state.aiAgendaNote = "AI 未返回可用改稿，已使用本地模板。";
+  }
+
+  state.phase = "meeting";
   startTimer();
   render();
 }
@@ -798,6 +968,8 @@ function finishMeeting(reason) {
   applyOkrProgress(state.rating);
   if (state.isExtension) {
     state.extensionSegments += 1;
+  } else if (state.meetingMode === "trial") {
+    state.trialSegments += 1;
   } else {
     state.completedMeetings += 1;
   }
@@ -832,6 +1004,7 @@ function nextSet() {
 
 function extendRest() {
   state.phase = "meeting";
+  state.meetingMode = "full";
   state.isExtension = true;
   state.timeLeft = 15;
   state.activeAgenda = [
@@ -901,19 +1074,24 @@ function extendRest() {
 function showReport() {
   stopTimer();
   state.report = buildReport();
+  state.aiReportSource = state.completedMeetings > 0 ? "loading" : "local";
+  state.aiReportNote = state.completedMeetings > 0 ? "AI 财报秘书补稿中。" : "本地财报。";
   state.phase = "report";
   render();
+  if (state.completedMeetings > 0) updateReportWithAi();
 }
 
 function restart() {
   stopTimer();
   Object.assign(state, {
     phase: "opening",
+    meetingMode: "trial",
     setNumber: 1,
     completedMeetings: 0,
+    trialSegments: 0,
     review: "",
-    timeLeft: 60,
-    activeAgenda: agenda,
+    timeLeft: 30,
+    activeAgenda: trialAgenda,
     agendaIndex: 0,
     kpis: { cash: 54, morale: 50, growth: 45, bubble: 47 },
     history: [],
@@ -931,6 +1109,11 @@ function restart() {
     lastStamp: null,
     rating: null,
     report: null,
+    aiAgendaSource: "local",
+    aiAgendaNote: "本地模板待命。",
+    aiReportSource: "local",
+    aiReportNote: "本地财报待命。",
+    aiRequestId: state.aiRequestId + 1,
     isStamped: false,
     isExtension: false
   });
@@ -949,8 +1132,156 @@ function applyReviewEffect(review) {
   });
 }
 
+async function updateReportWithAi() {
+  const requestId = ++state.aiRequestId;
+  const aiResult = await requestAiSecretary("report", buildReportAiContext(), 1200);
+  if (requestId !== state.aiRequestId || state.phase !== "report") return;
+
+  if (aiResult?.ok && aiResult.event && state.report) {
+    state.report = {
+      ...state.report,
+      event: escapeHtml(aiResult.event)
+    };
+    state.aiReportSource = "ai";
+    state.aiReportNote = escapeHtml(aiResult.secretaryNote || "AI 会议秘书补充了财报摘要。");
+  } else {
+    state.aiReportSource = "local";
+    state.aiReportNote = "AI 未返回可用财报，已使用本地模板。";
+  }
+  render();
+}
+
+async function requestAiSecretary(kind, context, timeoutMs) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch("/api/ai-secretary", {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind, context })
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function buildAgendaAiContext() {
+  return buildAgendaAiContextFrom(state.review, state.kpis, 1, 1);
+}
+
+function buildAgendaAiContextFrom(review, kpis, limit = 2, optionLimit = Infinity) {
+  return {
+    review,
+    kpis: { ...kpis },
+    agenda: agenda.slice(0, limit).map((item) => ({
+      id: item.id,
+      speaker: item.speaker,
+      title: item.title,
+      proposal: item.proposal,
+      options: item.options.slice(0, optionLimit).map((option) => ({
+        id: option.id,
+        strategy: option.strategy,
+        label: option.label
+      }))
+    }))
+  };
+}
+
+async function preloadAgendaAi() {
+  if (preloadStarted) return preloadedAgendaAiPromise;
+  preloadStarted = true;
+  const warmedKpis = { cash: 54, morale: 53, growth: 50, bubble: 47 };
+  preloadedAgendaAiPromise = requestAiSecretary("agenda", buildAgendaAiContextFrom("正常交付", warmedKpis, 1, 1), 20000)
+    .then((result) => {
+      if (result?.ok && Array.isArray(result.agenda)) {
+        preloadedAgendaAi = {
+          review: "正常交付",
+          result
+        };
+        return preloadedAgendaAi;
+      }
+      return null;
+    })
+    .catch(() => null);
+  return preloadedAgendaAiPromise;
+}
+
+async function consumePreloadedAgendaAi(review, timeoutMs = 0) {
+  if (!preloadedAgendaAi && hasPreloadingAgendaAi(review)) {
+    await withTimeout(preloadedAgendaAiPromise, timeoutMs);
+  }
+  if (!preloadedAgendaAi || preloadedAgendaAi.review !== review) return null;
+  const result = preloadedAgendaAi.result;
+  preloadedAgendaAi = null;
+  return result;
+}
+
+function hasPreloadingAgendaAi(review) {
+  return review === "正常交付" && !!preloadedAgendaAiPromise && !preloadedAgendaAi;
+}
+
+function withTimeout(promise, timeoutMs) {
+  if (!promise || !timeoutMs) return promise;
+  return Promise.race([
+    promise,
+    new Promise((resolve) => {
+      window.setTimeout(() => resolve(null), timeoutMs);
+    })
+  ]);
+}
+
+function buildReportAiContext() {
+  return {
+    rating: state.rating,
+    kpis: { ...state.kpis },
+    riskTags: [...state.riskTags],
+    history: state.history.map((item) => ({
+      issue: item.issue,
+      option: item.option,
+      strategy: item.strategy,
+      reaction: item.reaction
+    }))
+  };
+}
+
+function mergeAgendaCopy(baseAgenda, aiAgenda) {
+  const overrides = new Map((Array.isArray(aiAgenda) ? aiAgenda : []).map((item) => [item.id, item]));
+  return baseAgenda.map((item) => {
+    const override = overrides.get(item.id) || {};
+    const optionOverrides = new Map((override.options || []).map((option) => [option.id, option]));
+    return {
+      ...item,
+      title: override.title ? escapeHtml(override.title) : item.title,
+      proposal: override.proposal ? escapeHtml(override.proposal) : item.proposal,
+      options: item.options.map((option) => {
+        const optionOverride = optionOverrides.get(option.id) || {};
+        return {
+          ...option,
+          deltas: { ...option.deltas },
+          reaction: optionOverride.reaction ? escapeHtml(optionOverride.reaction) : option.reaction
+        };
+      })
+    };
+  });
+}
+
+function cloneAgenda(source) {
+  return source.map((item) => ({
+    ...item,
+    options: item.options.map((option) => ({
+      ...option,
+      deltas: { ...option.deltas }
+    }))
+  }));
+}
+
 function seedDangerWarnings() {
-  Object.keys(kpiMeta).forEach((key) => {
+  getVisibleKpiKeys().forEach((key) => {
     const danger = getDangerType(state.kpis[key]);
     if (danger) state.crisisWatch[key] = { status: "warning", issueIndex: -1, direction: danger };
   });
@@ -958,7 +1289,8 @@ function seedDangerWarnings() {
 
 function updateCrisisAfterChoice(issueTitle) {
   const triggered = [];
-  Object.entries(kpiMeta).forEach(([key, meta]) => {
+  getVisibleKpiKeys().forEach((key) => {
+    const meta = kpiMeta[key];
     const danger = getDangerType(state.kpis[key]);
     const watch = state.crisisWatch[key];
 
@@ -993,21 +1325,23 @@ function updateCrisisAfterChoice(issueTitle) {
 function buildAuditFocus() {
   const values = state.kpis;
   const lastRisk = state.riskTags[state.riskTags.length - 1] || "";
-  if (lastRisk.includes("现金") || values.cash < targetZone.min) return "救现金流，别让泡沫爆表。";
-  if (lastRisk.includes("泡沫") || values.bubble > targetZone.max) return "把泡沫压回现实，士气不能崩。";
-  if (values.growth > targetZone.max) return "把增长压回现实，别让心肺财务部报警。";
-  if (values.morale < targetZone.min) return "先保士气，别让腿部事业群趴桌。";
+  if (state.meetingMode === "trial") return "把两个指标调进绿色窗口：别拉满，刚好能复工。";
+  if (lastRisk.includes("供氧") || values.cash < targetZone.min) return "稳供氧周转，别让泡沫爆表。";
+  if (lastRisk.includes("泡沫") || values.bubble > targetZone.max) return "把泡沫指数压回现实，动员温度不能崩。";
+  if (values.growth > targetZone.max) return "把刺激强度压回现实，别让心肺财务部报警。";
+  if (values.morale < targetZone.min) return "先保动员温度，别让腿部事业群趴桌。";
   if (getRoundCrisisEvents().length) return "今天不求完美，先别让大脑战略部接管。";
   return "四项都在绿区附近，别把好局开成大会。";
 }
 
 function buildRating(reason = "议题处理完毕") {
-  const safeCount = Object.values(state.kpis).filter(
+  const visibleKeys = getVisibleKpiKeys();
+  const safeCount = visibleKeys.map((key) => state.kpis[key]).filter(
     (value) => value >= targetZone.min && value <= targetZone.max
   ).length;
   let level = 0;
-  if (safeCount === 4) level = 3;
-  else if (safeCount >= 2) level = 2;
+  if (safeCount === visibleKeys.length) level = 3;
+  else if (safeCount >= Math.ceil(visibleKeys.length / 2)) level = 2;
   else if (safeCount >= 1) level = 1;
 
   const crisisCount = getRoundCrisisEvents().length;
@@ -1039,6 +1373,14 @@ function buildRating(reason = "议题处理完毕") {
     }
   ];
   const result = { ...table[level], level, safeCount, crisisCount, reason };
+  if (state.meetingMode === "trial") {
+    result.badge = level >= 2 ? "创" : "试";
+    result.title = level >= 2 ? "试营业通过" : "试营业磕绊";
+    result.copy =
+      level >= 2
+        ? "两项核心指标进入可复工窗口，肉身集团获得临时营业执照。"
+        : "公司能开张，但供氧和动员还没同时站稳。";
+  }
   if (reason === "仓促复工") {
     result.copy = "复工优先通过，但审计目标还没盖完章；这次只能算能营业，不能算漂亮。";
   }
@@ -1055,7 +1397,8 @@ function applyOkrProgress(rating) {
   const caps = [Infinity, 12, 6, 0];
   const crisisCap = caps[Math.min(rating.crisisCount, 3)];
   const reasonCap = rating.reason === "仓促复工" ? 6 : Infinity;
-  const cap = Math.min(crisisCap, reasonCap);
+  const modeCap = state.meetingMode === "trial" ? 8 : Infinity;
+  const cap = Math.min(crisisCap, reasonCap, modeCap);
   const delta = Math.max(0, Math.min(base, cap, 100 - state.okr.value));
   state.okr.lastDelta = delta;
   state.okr.value = clamp(state.okr.value + delta, 0, 100);
@@ -1071,35 +1414,37 @@ function buildNextRoundHint(event) {
   if (event.kpi === "cash") return "下轮: 心肺财务部将优先发难。";
   if (event.kpi === "bubble") return "下轮: 大脑战略部会带着泡沫审计报告入场。";
   if (event.kpi === "morale") return "下轮: 腿部事业群可能先趴桌再发言。";
-  if (event.kpi === "growth") return "下轮: 增长曲线会要求解释自己为什么抖。";
+  if (event.kpi === "growth") return "下轮: 刺激强度曲线会要求解释自己为什么抖。";
   return "下轮: 审计组会提前到场。";
 }
 
 function buildReport() {
   const hasFullMeeting = state.completedMeetings > 0;
-  const rating = state.rating || (hasFullMeeting ? buildRating() : { title: "未开会", level: 0 });
+  const hasAnyMeeting = hasFullMeeting || state.trialSegments > 0;
+  const rating = state.rating || (hasAnyMeeting ? buildRating() : { title: "未开会", level: 0 });
   const topStrategy = Object.entries(state.strategyCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
   const riskText = summarizeRisks(state.riskTags);
-  let title = hasFullMeeting ? "勉强复工型腿日" : "业务试探型开张";
+  let title = hasAnyMeeting ? "试营业型复工" : "业务试探型开张";
 
-  if (!hasFullMeeting) title = "业务试探型开张";
+  if (!hasAnyMeeting) title = "业务试探型开张";
+  else if (state.trialSegments && !hasFullMeeting) title = "试营业型复工";
   else if (riskText.includes("泡沫")) title = "泡沫驱动型腿日";
-  else if (riskText.includes("现金流") || riskText.includes("预算")) title = "现金流紧张型冲刺";
+  else if (riskText.includes("供氧") || riskText.includes("预算")) title = "供氧紧张型冲刺";
   else if (riskText.includes("PPT") || riskText.includes("大脑")) title = "大脑接管型休息";
   else if (topStrategy === "vision") title = "画饼续命型复工";
   else if (topStrategy === "push") title = "低质量高意志训练";
   else if (topStrategy === "deflect") title = "历史遗留型经营";
   if (hasFullMeeting && state.okr.value >= 80 && state.crisisEvents.length === 0) title = "罕见共识型经营";
-  if (hasFullMeeting && rating.title === "会议失控" && !riskText.includes("现金流")) title = "大脑接管型休息";
+  if (hasFullMeeting && rating.title === "会议失控" && !riskText.includes("供氧")) title = "大脑接管型休息";
 
   return {
     title,
     okr: `${state.okr.initial}% -> ${state.okr.value}%`,
     meetingSummary: buildMeetingSummary(),
     rating: rating.title,
-    risks: riskText || (hasFullMeeting ? "暂无风险标签，审计员今天没找到存在感。" : "暂无风险标签；今天只有开张试探，审计员还没入座。"),
-    event: hasFullMeeting ? getBestEvent() : "尚未召开组间小会，财务部只拿到一张开张意向书。",
-    department: hasFullMeeting
+    risks: riskText || (hasAnyMeeting ? "暂无风险标签，审计员今天没找到存在感。" : "暂无风险标签；今天只有开张试探，审计员还没入座。"),
+    event: hasAnyMeeting ? getBestEvent() : "尚未召开组间小会，财务部只拿到一张开张意向书。",
+    department: hasAnyMeeting
       ? "腿部事业群完成一轮业务冲刺，并把站起来重新定义为跨部门协作。"
       : "腿部事业群仍在热身，今日经营数据保持空白但诚实。"
   };
@@ -1130,9 +1475,17 @@ function summarizeRisks(tags) {
 }
 
 function buildMeetingSummary() {
-  const base = `${state.completedMeetings} 次小会`;
+  const hasTrial = state.trialSegments > 0;
+  const hasFull = state.completedMeetings > 0;
+  let base = `${state.completedMeetings} 次小会`;
+  if (hasTrial && hasFull) base = `${state.trialSegments} 次试营业 + ${state.completedMeetings} 次完整小会`;
+  else if (hasTrial) base = `${state.trialSegments} 次试营业`;
   if (!state.extensionSegments) return base;
   return `${base} + ${state.extensionSegments} 个追加议题`;
+}
+
+function getVisibleKpiKeys() {
+  return state.meetingMode === "trial" ? ["cash", "morale"] : Object.keys(kpiMeta);
 }
 
 function getRoundRiskTags() {
@@ -1161,6 +1514,15 @@ function getDangerType(value) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function feedback() {

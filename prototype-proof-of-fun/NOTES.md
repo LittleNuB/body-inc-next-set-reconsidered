@@ -10,7 +10,15 @@ Run:
 start .\prototype-proof-of-fun\index.html
 ```
 
-Direct open now defaults to Variant B. To force the main proof-of-fun path, open `index.html?variant=B`.
+Run with local DeepSeek proxy:
+
+```powershell
+npm run dev
+```
+
+The local server reads the DeepSeek key from `DEEPSEEK_API_KEY`, `DEEPSEEK_KEY_FILE`, or `C:\Users\LittleNub\Desktop\Key.txt`. The key is never exposed to the browser. If AI is unavailable, the prototype uses local templates.
+
+Direct open now defaults to Variant B and the **初创期试营业 30 秒** flow. To force the main full-meeting proof-of-fun layout, open `index.html?variant=B` and tap **直接开完整小会**.
 
 Prototype shape:
 
@@ -21,24 +29,29 @@ Prototype shape:
 What is intentionally included:
 
 - One training department: 腿部事业群.
-- One 60-second meeting.
+- Default 30-second 初创期试营业 for first-time onsite players.
+- One 60-second complete meeting for roadshow/demo mode.
 - Five hand-written agenda items.
 - Four contextual choices per agenda item, each mapped to a stable strategy type: 愿景型 / 安抚型 / 推进型 / 转移型.
 - Hidden numerical effects before stamping, explicit consequences after stamping.
-- Four KPI instruments where the middle band is the target.
+- Status-style KPI instruments where the middle band is the target.
+- Final KPI names: 供氧周转 / 动员温度 / 刺激强度 / 泡沫指数.
 - Crisis warnings, soft crisis penalties, and one-way OKR progress.
 - Rating and肉身财报 that use local rules, not AI.
+- Optional DeepSeek AI secretary for the first complete-meeting agenda item and the report's最大内耗事件.
 
 What is intentionally excluded:
 
 - Full department selection.
 - Long-term milestones.
 - Real persistence.
-- AI calls.
+- Public deployment.
 - Production routing, tests, and error handling.
 
 Current B-variant focus:
 
+- Default to 初创期: 2 KPIs, 2 action types, 30 seconds.
+- Keep 路演入口 separate: tap **直接开完整小会** for the full 60-second system demo.
 - Show the round audit focus before choices.
 - Show crisis warnings when a KPI enters danger.
 - Trigger a crisis if the KPI remains dangerous after the next agenda item.
@@ -50,12 +63,13 @@ Current B-variant focus:
 
 User-test script:
 
-1. Ask the tester to open Variant B first and play without explanation.
-2. Observe whether they notice the round audit focus and green middle KPI band before the second stamp.
-3. Watch whether a crisis warning changes their next choice, and whether a crisis event feels like a fair consequence.
-4. After the rating, check whether OKR progress, risk tags, and next-round fallout are noticed.
-5. After the report, ask: "Which line would you screenshot?"
-6. Use Variant A or C only as layout comparisons after the B run.
+1. Ask the tester to open the prototype and tap **试营业 30 秒** without explanation.
+2. Observe whether they understand that the green middle band is the target before the second stamp.
+3. After the trial rating, ask whether they want to enter the complete meeting.
+4. In the complete meeting, watch whether a crisis warning changes their next choice, and whether a crisis event feels like a fair consequence.
+5. After the rating, check whether OKR progress, risk tags, and next-round fallout are noticed.
+6. After the report, ask: "Which line would you screenshot?"
+7. Use Variant A or C only as layout comparisons after the B run.
 
 Pass signals:
 

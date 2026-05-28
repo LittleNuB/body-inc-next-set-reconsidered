@@ -90,7 +90,8 @@ button {
 .result-detail,
 .report-meta,
 .agenda-count,
-.state-readout {
+.state-readout,
+.ai-badge {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
@@ -207,6 +208,29 @@ button {
   font-weight: 800;
 }
 
+.ai-badge {
+  width: fit-content;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ai-badge.ai {
+  background: #dff4ff;
+}
+
+.ai-badge.loading {
+  background: #ffe58b;
+}
+
+.ai-badge.local {
+  background: #eaf7f0;
+}
+
 .primary-action:active,
 .secondary-action:active,
 .stamp:active,
@@ -216,6 +240,13 @@ button {
 }
 
 .training-screen {
+  min-height: calc(100dvh - 98px);
+  display: grid;
+  align-content: center;
+  gap: 18px;
+}
+
+.ai-loading {
   min-height: calc(100dvh - 98px);
   display: grid;
   align-content: center;

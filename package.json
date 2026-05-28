@@ -1,0 +1,10 @@
+{
+  "name": "body-inc-next-set-reconsidered",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --use-env-proxy server.mjs",
+    "check": "node --check server.mjs && node --check prototype-proof-of-fun/app.js && node --check output/playwright/verify-body-inc-b.js"
+  }
+}
