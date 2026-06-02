@@ -1,6 +1,21 @@
 # Game Form Decisions
 
-Last updated: 2026-05-28
+Last updated: 2026-06-02
+
+## Status Note
+
+This document records the older hackathon / roadshow form decisions. It is still useful historical context, especially for KPI naming and complexity progression, but it is no longer the active source of truth.
+
+For current product direction, use `docs/GAMEPLAY_DIRECTION.md`.
+
+Current active prototype: `prototype-mobile-slice`.
+
+Current interaction finding: persistent bottom action panels make the mobile game feel like a dashboard and shrink the office scene. The preferred slice interaction is now:
+
+1. Tap a visible office incident.
+2. Open a temporary event sheet with concrete event description.
+3. Choose a handling method.
+4. Close the sheet and return to the office scene.
 
 ## Locked Direction
 

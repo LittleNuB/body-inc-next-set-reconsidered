@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "node --use-env-proxy server.mjs",
-    "check": "node --check server.mjs && node --check prototype-proof-of-fun/app.js && node --check output/playwright/verify-body-inc-b.js"
+    "check": "node --check server.mjs && node --check prototype-proof-of-fun/app.js && node --check prototype-mobile-slice/app.js && node --check output/playwright/verify-body-inc-b.js && node --check output/playwright/verify-mobile-slice.js"
   }
 }
