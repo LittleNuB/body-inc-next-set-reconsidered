@@ -35,8 +35,8 @@ const incidentCatalog = {
     owner: "腿部事业群",
     title: "腿部趴桌",
     icon: "腿",
-    line: "腿部趴在桌边，声称楼梯业务先破产。",
-    detail: "它不是拒绝训练，只是在把每一级台阶都送进法务复核。",
+    line: "楼梯业务申请破产，腿部暂时趴桌。",
+    detail: "它还愿意练，只是不想立刻站起来。",
     risk: "下肢怠工",
     impacts: { comfort: -1, push: -1, vision: 1, deflect: 1 }
   },
@@ -44,8 +44,8 @@ const incidentCatalog = {
     owner: "心肺财务部",
     title: "供氧账本变红",
     icon: "账",
-    line: "供氧账本开始冒烟，红字写得比口号还大。",
-    detail: "心肺财务部要求暂停一切慷慨承诺，尤其是“马上再来一组”。",
+    line: "供氧账本变红，心肺财务部开始盯人。",
+    detail: "预算够复工，但不能乱烧。",
     risk: "供氧透支",
     impacts: { comfort: -1, push: 1, vision: 1, deflect: -1 }
   },
@@ -53,8 +53,8 @@ const incidentCatalog = {
     owner: "大脑战略部",
     title: "PPT 泡泡膨胀",
     icon: "饼",
-    line: "大脑在墙上画饼，饼已经快挡住复工门。",
-    detail: "第 12 页 PPT 写着：“再坐十秒，是组织资产沉淀。”",
+    line: "大脑把“再坐十秒”包装成战略沉淀。",
+    detail: "PPT 已经挡住复工门。",
     risk: "战略泡沫",
     impacts: { comfort: 0, push: -1, vision: 1, deflect: -2 }
   },
@@ -62,8 +62,8 @@ const incidentCatalog = {
     owner: "审计组",
     title: "审计红灯闪烁",
     icon: "灯",
-    line: "审计组把尺子插在绿区旁，怀疑大家在重新定义刚好。",
-    detail: "它不反对复工，它只想知道为什么每次都刚好差一点。",
+    line: "审计组怀疑大家在重新定义“刚好”。",
+    detail: "它不拦复工，只会贴风险。",
     risk: "审计保留意见",
     impacts: { comfort: 0, push: 1, vision: 1, deflect: -1 }
   },
@@ -71,8 +71,8 @@ const incidentCatalog = {
     owner: "刺激仪表",
     title: "刺激仪表抖动",
     icon: "针",
-    line: "刺激仪表像开会铃一样抖，没人知道这是热身还是报修。",
-    detail: "推进派说这叫士气，大脑说这叫增量，腿部说这叫离职前兆。",
+    line: "刺激仪表开始抖，热身和报修很难分。",
+    detail: "推进派说这是好事。",
     risk: "刺激过载",
     impacts: { comfort: -1, push: 1, vision: 1, deflect: 0 }
   },
@@ -80,8 +80,8 @@ const incidentCatalog = {
     owner: "档案柜",
     title: "历史文件堆高",
     icon: "档",
-    line: "档案柜长出新的一层，标签写着“以后再说”。",
-    detail: "转移不是消失，只是把问题培养成更懂流程的样子。",
+    line: "档案柜长出新文件，标签写着“以后再说”。",
+    detail: "转移会降温，也会留账。",
     risk: "历史遗留",
     impacts: { comfort: -1, push: 1, vision: 1, deflect: 1 }
   }
@@ -89,15 +89,15 @@ const incidentCatalog = {
 
 const state = {
   phase: "home",
-  duration: 60,
-  timeLeft: 60,
+  duration: 90,
+  timeLeft: 90,
   elapsed: 0,
   actionIndex: 0,
   selectedIncidentId: "legs_slumped",
   modalIncidentId: "",
-  nextIncidentAt: 8,
-  kpis: initialKpis(60),
-  incidents: seedIncidents(60),
+  nextIncidentAt: 18,
+  kpis: initialKpis(90),
+  incidents: seedIncidents(90),
   risks: [],
   history: [],
   lastEventTitle: "",
@@ -177,20 +177,26 @@ function renderGame() {
   const canShowModal = modalIncident && modalIncident.severity > 0;
   const overtime = state.timeLeft < 0;
   const canAct = state.actionIndex < config.actionLimit;
-  const actionText = canAct ? `行动 ${state.actionIndex + 1} / ${config.actionLimit}` : `行动 ${config.actionLimit} / ${config.actionLimit}`;
+  const actionText = `行动 ${state.actionIndex} / ${config.actionLimit}`;
   const pressureLeft = Math.max(0, state.nextIncidentAt - state.elapsed);
-  const selectedText = canAct ? `点事故处理 · 升级 ${pressureLeft}s` : "行动用完 · 可复工结算";
-  const speechTitle = state.lastEventTitle || primaryMeta?.line || "办公室暂时安静，可以复工结算。";
-  const speechHint = state.lastReaction || primaryMeta?.detail || "点事故牌查看详情和处理方式。";
+  const urgency = primaryIncident && primaryMeta ? `${primaryMeta.title}${"!".repeat(primaryIncident.severity)}` : "暂无事故";
+  const pressureText = pressureLeft > 0 ? `${pressureLeft}s 后升级` : "即将升级";
+  const speechTitle = state.lastEventTitle || (primaryMeta ? `最急：${primaryMeta.title}` : "办公室暂时安静");
+  const speechHint = state.lastReaction || primaryMeta?.line || "点事故牌，选一个处理方式。";
 
   return `
     <section class="game">
       <div class="hud">
-        <div>
+        <div class="hud-title">
           <strong>腿部事业群</strong>
-          <div class="hint">${actionText} · ${selectedText}</div>
+          <div class="hint">${overtime ? "会议加班中" : "90 秒恢复会主测"}</div>
         </div>
         <div class="timer ${overtime ? "overtime" : ""}">${formatTimer(state.timeLeft)}</div>
+        <div class="status-pills">
+          <span>${actionText}</span>
+          <span class="${pressureLeft <= 6 && canAct ? "hot-pill" : ""}">${canAct ? pressureText : "行动用完"}</span>
+          <span class="urgent-pill">最急 ${urgency}</span>
+        </div>
       </div>
 
       <div class="scene ${overtime ? "overtime" : ""} ${state.stamped ? "stamped" : ""} ${hasCrisis() ? "crisis" : ""}">
@@ -321,7 +327,6 @@ function renderIncidentModal(incident, tools, disabled) {
           <em>${"!".repeat(incident.severity)}</em>
         </div>
         <p class="modal-line">${meta.line}</p>
-        <p class="modal-detail">${meta.detail}</p>
         <div class="modal-actions ${tools.length === 3 ? "three" : tools.length === 4 ? "four" : ""}">
           ${tools.map((tool) => renderModalAction(tool, incident.id, disabled)).join("")}
         </div>
@@ -498,15 +503,14 @@ function useTool(tool, incidentId) {
   });
 
   state.stamped = true;
+  state.nextIncidentAt = Math.max(state.nextIncidentAt, state.elapsed + Math.ceil(nextEscalationInterval() * 0.55));
   window.setTimeout(() => {
     state.stamped = false;
     state.actionIndex += 1;
     state.selectedIncidentId = pickUrgentIncidentId();
     state.modalIncidentId = "";
-    state.lastEventTitle = "";
-    state.lastReaction = "";
     if (state.phase === "game") render();
-  }, 620);
+  }, 1050);
   render();
 }
 
@@ -575,9 +579,9 @@ function pickUrgentIncidentId() {
 }
 
 function nextEscalationInterval() {
-  if (state.duration === 30) return 7;
-  if (state.duration === 60) return 9;
-  return 10;
+  if (state.duration === 30) return 10;
+  if (state.duration === 60) return 14;
+  return 18;
 }
 
 function escalatePressure() {
@@ -589,8 +593,8 @@ function escalatePressure() {
   const meta = incidentCatalog[change.id];
   state.selectedIncidentId = change.id;
   if (state.modalIncidentId && !hasActiveIncident(state.modalIncidentId)) state.modalIncidentId = "";
-  state.lastEventTitle = "办公室事故自己升级了。";
-  state.lastReaction = `${meta.title}没人管，升到 ${change.next} 级。${change.next >= 3 ? ` 审计贴了：${meta.risk} +1。` : " 它暂时还没掀桌，但已经开始找群聊。"} `;
+  state.lastEventTitle = `事故升级：${meta.title}`;
+  state.lastReaction = change.next >= 3 ? `升到 ${change.next} 级，贴纸：${meta.risk} +1。` : `升到 ${change.next} 级，先处理它。`;
   if (change.next >= 3) state.risks.push(`${meta.risk} +1`);
 }
 
@@ -678,31 +682,29 @@ function collectRisks(tool) {
 
 function previewImpact(tool, targetId) {
   const targetDelta = incidentCatalog[targetId]?.impacts[tool] || 0;
-  const targetText = targetDelta < 0 ? `本事 ${targetDelta}` : targetDelta > 0 ? `本事 +${targetDelta}` : "本事不变";
+  const targetText = targetDelta < 0 ? "当前降" : targetDelta > 0 ? "当前升" : "当前稳";
   const sideCount = activeIncidents().filter((incident) => incident.id !== targetId && (incidentCatalog[incident.id].impacts[tool] || 0) > 0).length;
   const parts = [targetText];
-  if (sideCount) parts.push(`旁事 +${sideCount}`);
-  if (tool === "deflect") parts.push("遗留 +1");
+  if (sideCount) parts.push("旁事升");
+  if (tool === "deflect") parts.push("留遗留");
   return parts.join(" · ");
 }
 
 function buildToolTitle(tool, targetId) {
   const targetName = incidentCatalog[targetId]?.title || "现场事故";
   const titles = {
-    comfort: `安抚 ${targetName}。`,
-    push: `推进 ${targetName}。`,
-    vision: `包装 ${targetName}。`,
-    deflect: `转移 ${targetName}。`
+    comfort: `已安抚：${targetName}`,
+    push: `已推进：${targetName}`,
+    vision: `已包装：${targetName}`,
+    deflect: `已转移：${targetName}`
   };
   return titles[tool] || "临时处理了一下现场。";
 }
 
 function buildReaction(tool, targetId, changes, risks) {
   const changeText = formatTargetChanges(changes, targetId);
-  const riskText = risks.length ? `新贴纸：${risks.slice(0, 2).join("、")}。` : "审计红笔收回抽屉。";
-  const activeCount = activeIncidents().length;
-  const summary = activeCount ? `剩余事故 ${activeCount} 件。` : "事故牌暂时翻面。";
-  return `${changeText || "现场暂时稳住了。"} ${riskText} ${summary}`;
+  const riskText = risks.length ? `贴纸：${risks.slice(0, 2).join("、")}。` : "暂无新贴纸。";
+  return `${changeText || "现场稳住。"} ${riskText}`;
 }
 
 function formatTargetChanges(changes, targetId) {
@@ -713,15 +715,15 @@ function formatTargetChanges(changes, targetId) {
 
   if (target) {
     const name = incidentCatalog[target.id].title;
-    if (target.next < target.prev) parts.push(`${name}${target.next === 0 ? "被按回可控区" : `降到 ${target.next} 级`}。`);
-    else parts.push(`${name}反而升到 ${target.next} 级。`);
+    if (target.next < target.prev) parts.push(`${name}${target.next === 0 ? "清掉" : `降到 ${target.next}`}。`);
+    else parts.push(`${name}升到 ${target.next}。`);
   } else {
-    parts.push(`${incidentCatalog[targetId].title}没有明显波动。`);
+    parts.push(`${incidentCatalog[targetId].title}暂稳。`);
   }
 
   if (sideEffects.length) {
     parts.push(
-      `连带影响：${sideEffects
+      `旁边：${sideEffects
         .map((change) => `${incidentCatalog[change.id].title}+${change.next - change.prev}`)
         .join("、")}。`
     );
@@ -806,7 +808,8 @@ function buildTitle(rating, culture) {
 function buildEvent() {
   const last = state.history[state.history.length - 1];
   if (!last) return "腿部事业群尚未正式发难，会议室已经开始热身。";
-  return `${last.eventTitle}${last.reaction}`;
+  const firstLine = last.reaction.split("。").filter(Boolean)[0] || "现场暂时稳住";
+  return `${last.eventTitle}: ${firstLine}。`;
 }
 
 function saveReport(report) {
