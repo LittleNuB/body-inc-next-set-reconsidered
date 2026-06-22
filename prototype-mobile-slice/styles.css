@@ -323,9 +323,12 @@ button {
   line-height: 1.05;
   text-align: left;
   touch-action: manipulation;
+  overflow: visible;
+  transform-origin: center;
 }
 
 .incident-marker b {
+  position: relative;
   grid-row: 1 / 3;
   width: 22px;
   height: 22px;
@@ -365,6 +368,86 @@ button {
 .incident-marker:disabled {
   cursor: default;
   filter: grayscale(0.5);
+}
+
+.incident-marker.ghost {
+  pointer-events: none;
+}
+
+.incident-marker.fx-up {
+  animation: incident-up 540ms steps(4, end);
+}
+
+.incident-marker.fx-up-urgent {
+  animation: incident-up-urgent 640ms steps(5, end);
+  outline: 4px solid rgba(217, 77, 60, 0.7);
+}
+
+.incident-marker.fx-chain-up {
+  animation: incident-chain-up 520ms steps(4, end);
+}
+
+.incident-marker.fx-down {
+  animation: incident-down 520ms steps(4, end);
+  background: #e9f7ec;
+}
+
+.incident-marker.fx-handled {
+  animation: incident-handled 420ms steps(3, end);
+}
+
+.incident-marker.fx-resolve {
+  animation: incident-resolve 680ms steps(5, end) forwards;
+}
+
+.incident-marker.fx-resolve::before {
+  content: "OK";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  border: 3px solid var(--safe);
+  background: #fffdf1;
+  color: var(--safe);
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: 1000;
+  translate: -50% -50%;
+  rotate: -10deg;
+  animation: resolve-stamp 500ms steps(4, end);
+}
+
+.incident-ppt_bubble.fx-ppt-pop::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 35% 34%, rgba(255, 255, 255, 0.95) 0 4px, transparent 5px),
+    radial-gradient(circle at 60% 60%, rgba(255, 232, 139, 0.95) 0 3px, transparent 4px),
+    linear-gradient(45deg, transparent 42%, rgba(42, 35, 24, 0.8) 43% 47%, transparent 48%);
+  animation: ppt-pop 560ms steps(5, end) forwards;
+}
+
+.incident-audit_lamp.fx-audit-flash b {
+  animation: audit-card-flash 580ms steps(4, end);
+}
+
+.incident-audit_lamp.fx-audit-dim {
+  animation: audit-card-dim 560ms steps(4, end);
+}
+
+.incident-file_pile.fx-file-grow b::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: -9px;
+  height: 5px;
+  border: 2px solid var(--line);
+  background: #fff7db;
+  box-shadow: 0 6px 0 #fff7db, 0 8px 0 var(--line);
+  animation: file-grow 620ms steps(4, end);
 }
 
 .incident-marker.hot {
@@ -504,6 +587,10 @@ button {
   transform: rotate(8deg) translateY(7px);
 }
 
+.sprite.legs.fx-legs-recover .pixel-leg {
+  animation: legs-recover 620ms steps(5, end);
+}
+
 .sprite.heart {
   right: 28px;
   top: 122px;
@@ -532,6 +619,14 @@ button {
 
 .sprite.audit.alarm {
   animation: audit-alarm 900ms steps(2, end) infinite;
+}
+
+.sprite.audit.fx-audit-up .pixel-audit::before {
+  animation: audit-light-up 620ms steps(4, end);
+}
+
+.sprite.audit.fx-audit-down .pixel-audit::before {
+  animation: audit-light-down 620ms steps(4, end);
 }
 
 .pixel-leg,
@@ -717,7 +812,7 @@ button {
   transform: translateX(-2px);
 }
 
-.tool-area {
+.round-actions {
   display: grid;
   gap: 8px;
 }
@@ -892,15 +987,15 @@ button {
 .archive {
   min-height: calc(100dvh - 28px);
   display: grid;
-  align-content: center;
+  align-content: start;
   gap: 10px;
 }
 
 .report-card,
 .archive-card {
-  padding: 13px;
+  padding: 12px;
   display: grid;
-  gap: 9px;
+  gap: 8px;
 }
 
 .report-card h1,
@@ -910,11 +1005,101 @@ button {
   line-height: 1.05;
 }
 
+.report-head,
+.archive-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.report-head .micro,
+.archive-head .micro {
+  margin: 0 0 3px;
+}
+
+.result-stamp {
+  flex: 0 0 auto;
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--danger);
+  color: #fff;
+  padding: 4px 7px;
+  box-shadow: 2px 2px 0 var(--shadow);
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 1;
+  transform: rotate(-2deg);
+  white-space: nowrap;
+}
+
+.result-stamp.muted {
+  background: #fff4b8;
+  color: var(--line);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.result-tile {
+  min-height: 53px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffdf1;
+  padding: 6px 7px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.result-tile span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.result-tile strong {
+  display: block;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.result-tile.risk {
+  background: #fff4b8;
+}
+
+.result-tile.culture {
+  background: #e9f7ec;
+}
+
 .report-line {
   display: grid;
   gap: 3px;
   border-top: 2px solid var(--line);
   padding-top: 8px;
+}
+
+.report-line.compact {
+  gap: 4px;
+  padding-top: 7px;
+}
+
+.report-line span {
+  line-height: 1.32;
+}
+
+.next-preview {
+  margin-top: 1px;
+}
+
+.next-preview span {
+  font-weight: 900;
 }
 
 .chip-row {
@@ -930,6 +1115,23 @@ button {
   padding: 3px 8px;
   font-size: 12px;
   font-weight: 900;
+}
+
+.report-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.report-actions .secondary,
+.archive > .secondary {
+  min-height: 50px;
+  font-size: 16px;
 }
 
 .archive-grid {
@@ -948,6 +1150,34 @@ button {
 .archive-stat strong {
   display: block;
   font-size: 20px;
+  line-height: 1.08;
+}
+
+.archive-report-list {
+  display: grid;
+  gap: 6px;
+}
+
+.archive-report {
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffdf1;
+  padding: 7px;
+  display: grid;
+  gap: 2px;
+}
+
+.archive-report strong {
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.archive-report span,
+.archive-report em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.25;
 }
 
 .empty {
@@ -996,6 +1226,214 @@ button {
   }
   50% {
     filter: saturate(1.7) hue-rotate(-14deg);
+  }
+}
+
+@keyframes incident-up {
+  0%,
+  100% {
+    scale: 1;
+    translate: 0 0;
+    filter: saturate(1);
+  }
+  25% {
+    scale: 1.08;
+    translate: 0 -2px;
+    filter: saturate(1.45);
+  }
+  50% {
+    translate: -3px 0;
+    background: #ffd4cc;
+  }
+  75% {
+    translate: 3px 0;
+  }
+}
+
+@keyframes incident-up-urgent {
+  0%,
+  100% {
+    scale: 1;
+    translate: 0 0;
+    filter: saturate(1);
+  }
+  18%,
+  54% {
+    scale: 1.1;
+    translate: -4px 0;
+    background: #ffb8ad;
+    filter: saturate(1.65) contrast(1.08);
+  }
+  36%,
+  72% {
+    translate: 4px 0;
+  }
+}
+
+@keyframes incident-chain-up {
+  0%,
+  100% {
+    scale: 1;
+    filter: saturate(1);
+  }
+  35% {
+    scale: 1.06;
+    background: #ffe6a6;
+    filter: saturate(1.4);
+  }
+  58% {
+    translate: 0 -3px;
+  }
+}
+
+@keyframes incident-down {
+  0%,
+  100% {
+    scale: 1;
+    filter: saturate(1);
+  }
+  28% {
+    scale: 0.94;
+    translate: 0 2px;
+    filter: saturate(0.82);
+  }
+  56% {
+    scale: 1.05;
+    background: #e9f7ec;
+  }
+}
+
+@keyframes incident-handled {
+  0%,
+  100% {
+    scale: 1;
+  }
+  45% {
+    scale: 0.96;
+    background: #e9f7ec;
+  }
+}
+
+@keyframes incident-resolve {
+  0% {
+    opacity: 1;
+    scale: 1;
+    filter: saturate(1);
+  }
+  38% {
+    opacity: 1;
+    scale: 0.96;
+    background: #e9f7ec;
+  }
+  100% {
+    opacity: 0;
+    scale: 0.78;
+    translate: 0 -8px;
+    filter: saturate(0.7);
+  }
+}
+
+@keyframes resolve-stamp {
+  0% {
+    opacity: 0;
+    scale: 1.9;
+  }
+  42%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes ppt-pop {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+  }
+  22% {
+    opacity: 1;
+    scale: 1.08;
+    rotate: -8deg;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.4;
+    rotate: 12deg;
+  }
+}
+
+@keyframes audit-card-flash {
+  0%,
+  100% {
+    background: #fff4b8;
+  }
+  45% {
+    background: #ff6b5b;
+    color: #fff;
+  }
+}
+
+@keyframes audit-card-dim {
+  0% {
+    filter: saturate(1.5);
+  }
+  55% {
+    filter: saturate(0.55) brightness(0.92);
+    background: #e9f7ec;
+  }
+  100% {
+    filter: saturate(1);
+  }
+}
+
+@keyframes file-grow {
+  0% {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+  35%,
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes legs-recover {
+  0% {
+    rotate: 8deg;
+    translate: 0 7px;
+  }
+  45% {
+    rotate: -3deg;
+    translate: 0 -2px;
+  }
+  100% {
+    rotate: 0deg;
+    translate: 0 0;
+  }
+}
+
+@keyframes audit-light-up {
+  0%,
+  100% {
+    box-shadow: inset 0 -10px 0 rgba(0,0,0,0.12);
+  }
+  45% {
+    background: #ff6b5b;
+    box-shadow: 0 0 0 6px rgba(217, 77, 60, 0.24), inset 0 -10px 0 rgba(0,0,0,0.12);
+  }
+}
+
+@keyframes audit-light-down {
+  0% {
+    background: #ff6b5b;
+  }
+  55% {
+    background: #bfc4b8;
+    filter: saturate(0.6);
+  }
+  100% {
+    filter: saturate(1);
   }
 }
 
