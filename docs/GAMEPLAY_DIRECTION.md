@@ -2,6 +2,15 @@
 
 Last updated: 2026-06-02
 
+## 2026-06-22 Architecture Decisions
+
+Two follow-up decisions refine this direction:
+
+- `docs/ADR_PIXI_RENDERING_BOUNDARY.md`: PixiJS is accepted for a technical slice, but only as the in-round office scene renderer. DOM keeps HUD, event sheets, reports, archive, and long text UI. The rules engine remains deterministic.
+- `docs/AGENT_DEPARTMENT_MEMORY_MODEL.md`: Department Agents are a long-term companionship and content-variety layer. The game remains a short-time rhythm-control game first. AI can express local facts and memory, but cannot decide rules, KPI deltas, incident severity, ratings, or real training safety.
+
+These documents should be read before starting Pixi, AI, or second-department work.
+
 ## Direction Change
 
 The project is no longer optimized for a 24h hackathon demo. The new goal is:

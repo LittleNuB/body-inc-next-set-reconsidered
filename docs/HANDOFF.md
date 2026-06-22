@@ -16,12 +16,14 @@ Subtitle: **下一组前，先开个小会。**
 ## Read First
 
 1. Current gameplay direction: `docs/GAMEPLAY_DIRECTION.md`
-2. This handoff: `docs/HANDOFF.md`
-3. Current mobile slice notes: `prototype-mobile-slice/NOTES.md`
-4. Current mobile slice code: `prototype-mobile-slice/app.js`
-5. Historical game form decisions: `docs/GAME_FORM_DECISIONS.md`
-6. Historical proof-of-fun plan: `docs/PROOF_OF_FUN.md`
-7. Legacy proof-of-fun notes: `prototype-proof-of-fun/NOTES.md`
+2. Pixi rendering boundary ADR: `docs/ADR_PIXI_RENDERING_BOUNDARY.md`
+3. Agent department memory model: `docs/AGENT_DEPARTMENT_MEMORY_MODEL.md`
+4. This handoff: `docs/HANDOFF.md`
+5. Current mobile slice notes: `prototype-mobile-slice/NOTES.md`
+6. Current mobile slice code: `prototype-mobile-slice/app.js`
+7. Historical game form decisions: `docs/GAME_FORM_DECISIONS.md`
+8. Historical proof-of-fun plan: `docs/PROOF_OF_FUN.md`
+9. Legacy proof-of-fun notes: `prototype-proof-of-fun/NOTES.md`
 
 Use `docs/GAMEPLAY_DIRECTION.md` as the current product/design source of truth. The older PRD and proof-of-fun files are useful history, but the latest working priority is the mobile slice.
 
@@ -132,11 +134,25 @@ The agent's job should be understood as:
 
 ## Recommended Next Step
 
-Do not add AI, more departments, production persistence, or production architecture yet.
+2026-06-22 planning update:
 
-Next, test whether the incident event sheet loop is actually fun on mobile before expanding content.
+The next architecture direction is documented in:
 
-Validation question:
+- `docs/ADR_PIXI_RENDERING_BOUNDARY.md`
+- `docs/AGENT_DEPARTMENT_MEMORY_MODEL.md`
+
+Recommended development order:
+
+1. Review and merge `codex/mobile-result-feedback` if it remains the best DOM baseline.
+2. Extract rules/state/data from `prototype-mobile-slice/app.js` into a shared rules layer.
+3. Add Back Infrastructure Department as configuration, not copied DOM logic.
+4. Build `prototype-pixi-slice` for only the Leg Business Group 90-second office scene.
+5. Compare DOM and Pixi versions before deciding whether to migrate the main mobile slice.
+6. Add AI secretary/memory only after the deterministic department loop is stable.
+
+Do not let Pixi or AI decide rules. Pixi should render the office scene. AI should express deterministic facts and department memory.
+
+Validation question for the current mobile loop:
 
 > Does tapping visible office incidents, reading a short concrete event, and choosing a temporary handling method feel like a game rather than a dashboard?
 
